@@ -127,23 +127,23 @@ const userSchema = new mongoose.Schema(
 );
 
 
-// ➤ Automatically create username like "@ahanafmubasshir"
-userSchema.pre("save", function (next) {
-  if (!this.isModified("fullName") && this.userName) return next();
+// // ➤ Automatically create username like "@ahanafmubasshir"
+// userSchema.pre("save", function (next) {
+//   if (!this.isModified("fullName") && this.userName) return next();
 
-  if (this.fullName) {
-    const cleaned = this.fullName
-      .toLowerCase()
-      .replace(/[^a-zA-Z ]/g, "")        // remove special chars
-      .trim()
-      .split(" ")
-      .join("");                         // join first + last name
+//   if (this.fullName) {
+//     const cleaned = this.fullName
+//       .toLowerCase()
+//       .replace(/[^a-zA-Z ]/g, "")        // remove special chars
+//       .trim()
+//       .split(" ")
+//       .join("");                         // join first + last name
 
-    this.userName = `@${cleaned}`;
-  }
+//     this.userName = `@${cleaned}`;
+//   }
 
-  next();
-});
+//   next();
+// });
 
 
 

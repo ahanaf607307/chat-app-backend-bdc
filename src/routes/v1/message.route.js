@@ -9,4 +9,5 @@ const messageRouter = express.Router();
 messageRouter.route("/send").post(auth("common"), messageController.sendMessage);  
 messageRouter.route("/:id").get(auth("common"), messageController.getMessages);  
 
+
 module.exports = messageRouter;

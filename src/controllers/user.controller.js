@@ -24,7 +24,7 @@ const getUsers = catchAsync(async (req, res) => {
   
 
   const result = await userService.getUsers(filter, options, req.user);
-  console.log('result ->',result)
+ 
   res.status(httpStatus.OK).json(
     response({
       message: "All Users",

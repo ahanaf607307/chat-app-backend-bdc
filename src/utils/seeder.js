@@ -2,28 +2,55 @@ const mongoose = require("mongoose");
 require("dotenv").config();
 const { User } = require("../models");
 
+const password = "$2a$08$cUQ3uMdbQjlyDF/dgn5mNuEt9fLJZqq8TaT9aKabrFuG5wND3/mPO"; //password: 1qazxsw2
+
 const usersData = [
   {
-    "fullName" : "Employee",
-  "email": "employee@gmail.com",
-  "password": "1qazxcvb",
-   "isEmailVerified" : true,
-},
+    fullName: "Testing Admin",
+    userName: "admin",
+    email: "admin@gmail.com",
+
+    password,
+    role: "admin",
+    isEmailVerified: true,
+  },
+
+
+  // New users
   {
-    "fullName" : "Client Mubasshir",
-  "email": "client@gmail.com",
-  "password": "1qazxcvb",
-  "isEmailVerified" : true,
-},
-{
-  "fullName" : "Admin",
-    "email": "admin@gmail.com",
-    "password": "1qazxcvb",
-     "isEmailVerified" : true,
-}
-
-]
-
+    fullName: "user1 Matrix",
+    userName: "user1",
+    email: "user1@gmail.com",
+    password,
+    role: "user",
+    isEmailVerified: true,
+  },
+  {
+    fullName: "user2 Knight",
+    userName: "user2",
+    email: "user2@gmail.com",
+    password,
+    role: "user",
+    isEmailVerified: true,
+  },
+  {
+    fullName: "user3 Yeager",
+    userName: "user3",
+    email: "user3@gmail.com",
+    password,
+    role: "user",
+    isEmailVerified: true,
+  },
+  {
+    fullName: "user3 Nova",
+    userName: "user3",
+    email: "user3@gmail.com",
+    password,
+    role: "user",
+    isEmailVerified: false,
+  },
+ 
+];
 
 const connectDB = async () => {
   try {

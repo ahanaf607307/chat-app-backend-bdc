@@ -1,81 +1,86 @@
 const httpStatus = require("http-status");
-const conversationService = require("../services/conversation.service");
-const response = require("../config/response");
+const { conversationService } = require("../services");
 
-const createOrGetConversation = async (req, res) => {
+/**
+ * Create or return a one-to-one conversation
+ */
+const createConversation = async (req, res) => {
   try {
-    const { userId } = req.body;
-    const myId = req.user.id; // from auth middleware
+    const { senderId, receiverId } = req.body;
 
-    if (myId === userId) {
-      return res.status(400).json({ error: "You cannot message yourself" });
-    }
+    const conversation = await conversationService.createOrGetConversation(
+      senderId,
+      receiverId
+    );
 
-    const createConv = await conversationService.createConversationService(
-      myId,
-      userId
-    );
-    res.status(httpStatus.OK).json(
-      response({
-        message: "Conversation creating successfully",
-        status: "OK",
-        statusCode: httpStatus.OK,
-        data: createConv,
-      })
-    );
-  } catch (err) {
-    res.status(httpStatus.BAD_REQUEST).json(
-      response({
-        message: "Conversation creating failed",
-        status: "BAD_REQUEST",
-        statusCode: httpStatus.BAD_REQUEST,
-        data : {}
-      })
-    );
+    return res.status(httpStatus.OK).json({
+      success: true,
+      message: "Conversation fetched/created successfully",
+      data: conversation,
+    });
+  } catch (error) {
+    return res.status(httpStatus.BAD_REQUEST).json({
+      success: false,
+      message: error.message,
+    });
   }
 };
 
-const getMyConversations = async (req, res) => {
+/**
+ * Get all conversations of a user
+ */
+const getUserConversations = async (req, res) => {
   try {
-    const userId = req.user.id;
-    const conversations = await conversationService.getUserConversationsService(
-      userId
-    );
-    res.status(httpStatus.OK).json(
-      response({
-        message: "Conversation getting successfully ",
-        status: "OK",
-        statusCode: httpStatus.OK,
-        data: conversations,
-      })
-    );
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+     const userId = req.user.id
+    console.log(userId)
+
+    const conversations = await conversationService.getUserConversations(userId);
+
+    return res.status(httpStatus.OK).json({
+      success: true,
+      data: conversations,
+      message : "all conversation getting successfully"
+    });
+  } catch (error) {
+    return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+      success: false,
+      message: "Failed to fetch conversations",
+    });
   }
 };
 
+/**
+ * Get specific conversation (with messages)
+ */
 const getConversationById = async (req, res) => {
   try {
-    const isConv = await conversationService.getConversationByIdService(
-      req.params.id
+    const { conversationId } = req.params;
+
+    const conversation = await conversationService.getConversationById(
+      conversationId
     );
-    if (!isConv)
-      return res.status(404).json({ error: "Conversation not found" });
-    res.status(httpStatus.OK).json(
-      response({
-        message: "Conversation getting successfully by id",
-        status: "OK",
-        statusCode: httpStatus.OK,
-        data: isConv,
-      })
-    );
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+
+    if (!conversation) {
+      return res.status(httpStatus.NOT_FOUND).json({
+        success: false,
+        message: "Conversation not found",
+      });
+    }
+
+    return res.status(httpStatus.OK).json({
+      success: true,
+      data: conversation,
+    });
+  } catch (error) {
+    return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+      success: false,
+      message: "Server error",
+    });
   }
 };
 
 module.exports = {
-  createOrGetConversation,
-  getMyConversations,
+  createConversation,
+  getUserConversations,
   getConversationById,
 };

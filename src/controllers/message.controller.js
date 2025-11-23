@@ -1,66 +1,105 @@
 const httpStatus = require("http-status");
-const response = require("../config/response");
 const { messageService } = require("../services");
 
-const sendMessage = async (req, res) => {
+/**
+ * Create a message in a conversation
+ */
+const createMessage = async (req, res) => {
   try {
-    const { conversationId, text } = req.body;
-    const sender = req.user.id;
+    const { conversationId } = req.params;
+    const { msgByUserId, content, type } = req.body;
 
-    const msg = await messageService.sendMessageService(
+    const message = await messageService.createMessage(
       conversationId,
-      sender,
-      text
+      msgByUserId,
+      content,
+      type
     );
-    res.status(httpStatus.OK).json(
-      response({
-        message: "Message sending successfully",
-        status: "OK",
-        statusCode: httpStatus.OK,
-        data: msg,
-      })
-    );
-  } catch (err) {
-    res.status(httpStatus.BAD_REQUEST).json(
-      response({
-        message: "Message sending failed",
-        status: "BAD_REQUEST",
-        statusCode: httpStatus.BAD_REQUEST,
-        data: {},
-      })
-    );
+
+    return res.status(httpStatus.CREATED).json({
+      success: true,
+      message: "Message sent",
+      data: message,
+    });
+  } catch (error) {
+    return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+      success: false,
+      message: error.message,
+    });
   }
 };
 
+/**
+ * Get messages of a conversation
+ */
 const getMessages = async (req, res) => {
   try {
-    const conversationId = req.params.id;
+    const { conversationId } = req.params;
+console.log(conversationId , "conversationId")
 
-    const messages = await messageService.getMessagesByConversationService(
+    const messages = await messageService.getConversationMessages(
       conversationId
     );
-    console.log("messages from get messages => ", messages);
-    res.status(httpStatus.OK).json(
-      response({
-        message: "Message getting successfully",
-        status: "OK",
-        statusCode: httpStatus.OK,
-        data: messages,
-      })
-    );
-  } catch (err) {
-    res.status(httpStatus.BAD_REQUEST).json(
-      response({
-        message: "Message getting failed",
-        status: "BAD_REQUEST",
-        statusCode: httpStatus.BAD_REQUEST,
-        data: {},
-      })
-    );
+
+    return res.status(httpStatus.OK).json({
+      success: true,
+      data: messages,
+    });
+  } catch (error) {
+    return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+      success: false,
+      message: "Failed to fetch messages",
+    });
+  }
+};
+
+/**
+ * Mark all messages as seen for this user
+ */
+const markSeen = async (req, res) => {
+  try {
+    const { conversationId } = req.params;
+    const { userId } = req.body;
+
+    await messageService.markMessagesAsSeen(conversationId, userId);
+
+    return res.status(httpStatus.OK).json({
+      success: true,
+      message: "Messages marked as seen",
+    });
+  } catch (error) {
+    return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+      success: false,
+      message: "Failed to mark messages seen",
+    });
+  }
+};
+
+/**
+ * Soft delete a message
+ */
+const deleteMessage = async (req, res) => {
+  try {
+    const { messageId } = req.params;
+
+    const result = await messageService.softDeleteMessage(messageId);
+
+    return res.status(httpStatus.OK).json({
+      success: true,
+      message: "Message deleted",
+      data: result,
+    });
+  } catch (error) {
+    return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+      success: false,
+      message: "Failed to delete message",
+    });
   }
 };
 
 module.exports = {
-  sendMessage,
+  createMessage,
   getMessages,
+  markSeen,
+  deleteMessage,
 };

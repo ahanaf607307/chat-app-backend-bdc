@@ -1,79 +1,76 @@
-const { default: mongoose } = require("mongoose");
 const { Conversation } = require("../models");
 
-const createConversationService = async (userA, userB) => {
+
+/**
+ * Create or return existing one-to-one conversation
+ */
+const createOrGetConversation = async (senderId, receiverId) => {
+  if (senderId.toString() === receiverId.toString()) {
+    throw new Error("Cannot create a conversation with yourself");
+  }
+
+  // Look for existing conversation (both possible orders)
   let conversation = await Conversation.findOne({
-    participants: { $all: [userA, userB] },
+    $or: [
+      { sender: senderId, receiver: receiverId },
+      { sender: receiverId, receiver: senderId },
+    ],
   });
 
-  if (!conversation) {
-    conversation = await Conversation.create({
-      participants: [userA, userB],
-    });
-  }
+  if (conversation) return conversation;
+
+  // Create new conversation
+  conversation = await Conversation.create({
+    sender: senderId,
+    receiver: receiverId,
+  });
 
   return conversation;
 };
 
-// it just gives the list of conversation
-
-//  const getUserConversationsService = async (userId) => {
-//   return Conversation.find({
-//     participants: userId
-//   }).populate("participants" , "-password   ").sort({ createdAt: -1 });
-// };
-
-//  it will give you the latest chat or conversation ->
-
-const getUserConversationsService = async (userId) => {
-  return Conversation.aggregate([
-    // Match conversations where the user is a participant
-    { $match: { participants: new mongoose.Types.ObjectId(userId) } },
-    // Lookup latest message
-    {
-      $lookup: {
-        from: "messages",
-        let: { convoId: "$_id" },
-        pipeline: [
-          { $match: { $expr: { $eq: ["$conversationId", "$$convoId"] } } },
-          { $sort: { createdAt: -1 } },
-        ],
-        as: "latestMessage",
-      },
-    },
-    // Populate participants
-    {
-      $lookup: {
-        from: "users",
-        localField: "participants",
-        foreignField: "_id",
-        as: "participants",
-      },
-    },
-    {
-      $project: {
-        "participants.fullName": 1,
-        "participants.email": 1,
-        latestMessage: 1,
-        createdAt: 1,
-      },
-    },
-    // Flatten latestMessage array
-    { $unwind: { path: "$latestMessage", preserveNullAndEmptyArrays: true } },
-    // Sort by latestMessage.createdAt (descending)
-    { $sort: { "latestMessage.createdAt": -1 } },
-  ]);
+/**
+ * Get all conversations for a user
+ */
+const getUserConversations = async (userId) => {
+  return Conversation.find({
+    $or: [{ sender: userId }, { receiver: userId }],
+  })
+    .populate("sender receiver lastMessage" , "fullName email userName")
+    .sort({ updatedAt: -1 });
 };
 
-const getConversationByIdService = async (conversationId) => {
-  return Conversation.findById(conversationId).populate(
-    "participants",
-    "username displayName avatarUrl"
+/**
+ * Push message ID + update last message
+ */
+const updateConversationWithMessage = async (conversationId, messageId) => {
+  return Conversation.findByIdAndUpdate(
+    conversationId,
+    {
+      $set: { lastMessage: messageId },
+      $push: { messages: messageId },
+    },
+    { new: true }
   );
 };
 
+/**
+ * Get a conversation with populated messages
+ */
+const getConversationById = async (conversationId) => {
+  return Conversation.findById(conversationId)
+    .populate("sender receiver")
+    .populate({
+      path: "messages",
+      populate: {
+        path: "msgByUserId",
+        model: "User",
+      },
+    });
+};
+
 module.exports = {
-  createConversationService,
-  getUserConversationsService,
-  getConversationByIdService,
+  createOrGetConversation,
+  getUserConversations,
+  updateConversationWithMessage,
+  getConversationById,
 };

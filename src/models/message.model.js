@@ -9,24 +9,32 @@ const messageSchema = new mongoose.Schema(
       ref: "Conversation",
       required: true,
     },
-    sender: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      required: true,
-    },
-    text: {
+    content: {
       type: String,
       required: true,
+      trim: true,
     },
-    // Optional: files, images, etc
-    attachments: [
-      {
-        url: String,
-        fileType: String,
-      },
-    ],
+    type: {
+      type: String,
+      enum: ["text", "image", "video", "file"],
+      default: "text",
+    },
+    seen: {
+      type: Boolean,
+      default: false,
+    },
+    msgByUserId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
+    isDeleted: {
+      type: Boolean,
+      default: false,
+    },
   },
-  { timestamps: true }
+  {
+    timestamps: true,
+  }
 );
 
 messageSchema.plugin(toJSON);

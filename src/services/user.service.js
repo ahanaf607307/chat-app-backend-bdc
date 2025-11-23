@@ -55,9 +55,12 @@ const getUsers = async (filter, options, user) => {
     }
   }
 
+   const paginateOptions = {
+    ...options,
+    select: "fullName userName email" 
+  };
 
-
-const users = await User.paginate(query, options);
+const users = await User.paginate(query, paginateOptions);
 
 // Return the filtered paginated result
 return users;

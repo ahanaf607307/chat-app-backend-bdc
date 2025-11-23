@@ -17,6 +17,7 @@ const subscriptionStatusEnum = [
 const register = {
   body: Joi.object().keys({
     fullName: Joi.string().allow(null, ''),
+    userName: Joi.string().allow(null, ''),
     email: Joi.string().email().required(),
 
     password: Joi.string()

@@ -16,6 +16,7 @@ const subscriptionStatusEnum = [
 const createUser = {
   body: Joi.object().keys({
     fullName: Joi.string().allow(null, ""),
+    userName: Joi.string().allow(null, ""),
     email: Joi.string().email().required(),
     password: Joi.string()
       .pattern(passwordRegex)

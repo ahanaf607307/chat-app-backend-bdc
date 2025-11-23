@@ -3,22 +3,34 @@ const { toJSON, paginate } = require("./plugins");
 
 const conversationSchema = new mongoose.Schema(
   {
-    participants: [
+    sender: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+    receiver: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+    lastMessage: {
+      type: mongoose.Schema.Types.ObjectId,
+      default: null,
+      ref: "Message",
+    },
+    messages: [
       {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
-        required: true,
+        ref: "Message",
       },
-    ]
+    ],
   },
-  { timestamps: true }
+  {
+    timestamps: true,
+  }
 );
 
-// Prevent duplicates: same two users cannot have two conversations
-conversationSchema.index(
-  { participants: 1 },
-  { unique: true, partialFilterExpression: { participants: { $size: 2 } } }
-);
+
 
 conversationSchema.plugin(toJSON);
 conversationSchema.plugin(paginate);

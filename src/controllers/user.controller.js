@@ -4,6 +4,7 @@ const ApiError = require("../utils/ApiError");
 const catchAsync = require("../utils/catchAsync");
 const response = require("../config/response");
 const { userService } = require("../services");
+const unlinkImages = require("../common/unlinkImage");
 
 const createUser = catchAsync(async (req, res) => {
   const user = await userService.createUser(req.body);
@@ -18,13 +19,9 @@ const createUser = catchAsync(async (req, res) => {
 });
 
 const getUsers = catchAsync(async (req, res) => {
-  const filter = pick(req.query, ["fullName", "email"]);
+  const filter = pick(req.query, ["name", "role", "gender"]);
   const options = pick(req.query, ["sortBy", "limit", "page"]);
-
-  
-
-  const result = await userService.getUsers(filter, options, req.user);
- 
+  const result = await userService.queryUsers(filter, options);
   res.status(httpStatus.OK).json(
     response({
       message: "All Users",
@@ -111,10 +108,6 @@ const updateProfile = catchAsync(async (req, res) => {
     req.body.image = `/uploads/users/${req.file.filename}`;
   }
 
-  // Set fullName if firstName or lastName is provided
-  if (!req.body.fullName && (req.body.firstName || req.body.lastName)) {
-    req.body.fullName = `${req.body.firstName || ''} ${req.body.lastName || ''}`.trim();
-  }
 
   const user = await userService.updateUserById(req.user.id, req.body);
 
@@ -140,6 +133,21 @@ const deleteUser = catchAsync(async (req, res) => {
   );
 });
 
+const searchUsers = catchAsync(async (req, res) => {
+  const { q } = req.query;
+  const options = pick(req.query, ["sortBy", "limit", "page"]);
+  const users = await userService.searchUsers(q, req.user.id, options);
+
+  res.status(httpStatus.OK).json(
+    response({
+      message: "Users found",
+      status: "OK",
+      statusCode: httpStatus.OK,
+      data: users,
+    })
+  );
+});
+
 module.exports = {
   createUser,
   getUsers,
@@ -148,4 +156,5 @@ module.exports = {
   updateUser,
   updateProfile,
   deleteUser,
+  searchUsers,
 };

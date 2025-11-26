@@ -2,21 +2,13 @@ const mongoose = require("mongoose");
 const app = require("./app");
 const config = require("./config/config");
 const logger = require("./config/logger");
-const { seedAdmin } = require("./utils/seedAdmin");
 
 // My Local IP Address
 const myIp = process.env.BACKEND_IP;
 
 let server;
-mongoose.connect(config.mongoose.url, config.mongoose.options).then(async () => {
+mongoose.connect(config.mongoose.url, config.mongoose.options).then(() => {
   logger.info("Connected to MongoDB");
-
-    await mongoose.connection.collection('services')
-    
-
-
-  // await seedAdmin()
-
   server = app.listen(config.port, myIp, () => {
     // logger.info(`Listening to port ${config.port}`);
     logger.info(`Listening to ip http://${myIp}:${config.port}`);
@@ -25,17 +17,22 @@ mongoose.connect(config.mongoose.url, config.mongoose.options).then(async () => 
   //initializing socket io
   const socketIo = require("socket.io");
   const socketIO = require("./utils/socketIO");
-  const io = socketIo(server, {
+  const ioServer = require("http").createServer();
+
+  const io = socketIo(ioServer, {
     cors: {
-      origin: "*"
+      origin: "*",
     },
   });
 
   socketIO(io);
 
   global.io = io;
-  server.listen(config.port, process.env.BACKEND_IP, () => {
-    // logger.info(`Socket IO listening to port ${config.port}`);
+
+  ioServer.listen(config.socketPort, myIp, () => {
+    logger.info(
+      `Socket IO listening to port http://${myIp}:${config.socketPort}`
+    );
   });
 });
 

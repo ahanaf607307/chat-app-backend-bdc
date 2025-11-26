@@ -2,15 +2,17 @@ const httpStatus = require("http-status");
 const { User } = require("../models");
 const ApiError = require("../utils/ApiError");
 const { sendEmailVerification } = require("./email.service");
+const unlinkImages = require("../common/unlinkImage");
+const jwt = require("jsonwebtoken");
 
 const createUser = async (userBody) => {
   if (await User.isEmailTaken(userBody.email)) {
     throw new ApiError(httpStatus.BAD_REQUEST, "Email already taken");
   }
-  const oneTimeCode = Math.floor(Math.random() * (999999 - 100000 + 1)) + 100000;
+  const oneTimeCode =
+    Math.floor(Math.random() * (999999 - 100000 + 1)) + 100000;
 
-  if (userBody.role === "user"  || userBody.role === "admin") {
-
+  if (userBody.role === "user" || userBody.role === "admin") {
     sendEmailVerification(userBody.email, oneTimeCode);
   }
   return User.create({ ...userBody, oneTimeCode });
@@ -22,7 +24,7 @@ const queryUsers = async (filter, options) => {
   // Loop through each filter field and add conditions if they exist
   for (const key of Object.keys(filter)) {
     if (
-      (key === "fullName" || key === "email" || key === "username") &&
+      (key === "name" || key === "email" || key === "username") &&
       filter[key] !== ""
     ) {
       query[key] = { $regex: filter[key], $options: "i" }; // Case-insensitive regex search for name
@@ -38,35 +40,30 @@ const queryUsers = async (filter, options) => {
   return users;
 };
 
-
-
-const getUsers = async (filter, options, user) => {
-  const query = {isDeleted: false, isEmailVerified: true};
-
-
-  for (const key of Object.keys(filter)) {
-    if (
-      (key === "fullName" || key === "email" ) &&
-      filter[key] !== ""
-    ) {
-      query[key] = { $regex: filter[key], $options: "i" };
-    } else if (filter[key] !== "") {
-      query[key] = filter[key];
-    }
-  }
-
-   const paginateOptions = {
-    ...options,
-    select: "fullName userName email" 
+const searchUsers = async (searchTerm, currentUserId, options) => {
+  const query = {
+    _id: { $ne: currentUserId }, // Exclude current user
+    isDeleted: false,
   };
 
-const users = await User.paginate(query, paginateOptions);
+  // Add search term if provided
+  if (searchTerm && searchTerm.trim() !== "") {
+    query.$or = [
+      { name: { $regex: searchTerm, $options: "i" } },
+      { username: { $regex: searchTerm, $options: "i" } },
+      { email: { $regex: searchTerm, $options: "i" } },
+    ];
+  }
 
-// Return the filtered paginated result
-return users;
+  const users = await User.paginate(query, options);
 
+  return users;
 };
- 
+
+const getUserByUsername = async (username) => {
+  return User.findOne({ username: username.toLowerCase() });
+};
+
 const getUserById = async (id) => {
   return User.findById(id);
 };
@@ -131,13 +128,30 @@ const isUpdateUser = async (userId, updateBody) => {
   return user;
 };
 
+const getUserFromToken = async (token) => {
+  if(!token) {
+    return {
+      message: "Session Expired. Please login again to continue.",
+      logout: true,
+    }
+  }
+
+  const decrip = await jwt.verify(token, process.env.JWT_SECRET);
+
+  const user = await User.findById(decrip.sub).select("-password");
+
+  return user;
+}
+
 module.exports = {
   createUser,
   queryUsers,
+  searchUsers,
   getUserById,
   getUserByEmail,
+  getUserByUsername,
   updateUserById,
   deleteUserById,
   isUpdateUser,
-  getUsers
+  getUserFromToken,
 };

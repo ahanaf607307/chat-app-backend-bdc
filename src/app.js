@@ -60,14 +60,13 @@ app.use(status());
 // v1 api routes
 app.use("/api/v1", routes);
 
-
 //testing API is alive
 app.get("/test", (req, res) => {
   let userIP =
     req.headers["x-real-ip"] ||
     req.headers["x-forwarded-for"] ||
     req.connection.remoteAddress;
-  res.send({ message: "This is Love Crew API", userIP });
+  res.send({ message: "This is a Monolithic MVC API", userIP });
 });
 
 // send back a 404 error for any unknown api request
